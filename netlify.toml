@@ -1,0 +1,14 @@
+[build]
+  command = "npm run build"
+  publish = ".next"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
+[functions]
+  node_bundler = "esbuild"
+
+# All environment variables (Supabase, Lemon Squeezy, etc.) are set in the
+# Netlify dashboard per deploy context (production / deploy previews), never
+# committed here. See .env.example for the full list and DEPLOYMENT.md for
+# per-context setup.

@@ -1,0 +1,28 @@
+@import "tailwindcss";
+
+@theme {
+  /* Brand Guide v1.0 — locked. */
+  --color-navy: #052439;
+  --color-coral: #e0705d;
+
+  /* Brand Guide v1.0 — provisional neutrals, not yet formally adopted brand
+     assets. Flagged in DECISIONS.md; revisit if the brand guide is updated. */
+  --color-offwhite: #f7f5f2;
+  --color-muted: #5c5c5c;
+  --color-hairline: #d9d9d9;
+
+  --font-heading: var(--font-poppins);
+  --font-body: var(--font-inter);
+}
+
+@layer base {
+  body {
+    @apply bg-offwhite font-body text-navy;
+  }
+
+  h1,
+  h2,
+  h3 {
+    @apply font-heading text-navy font-bold;
+  }
+}
