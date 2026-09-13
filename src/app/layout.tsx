@@ -74,12 +74,25 @@ export default function RootLayout({
             __html: JSON.stringify(websiteJsonLd).replace(/</g, "\\u003c"),
           }}
         />
-        <SkipLink />
-        <SiteHeader />
-        <main id="main-content" className="flex-1">
-          {children}
-        </main>
-        <SiteFooter />
+        {/* Gutter frame: no background of its own, so body's background
+            image (globals.css) shows through as a border around the page.
+            Purely additive spacing — every section/header/footer inside is
+            untouched. Drops to 0 margin on mobile per the brief. */}
+        <div className="flex flex-1 flex-col sm:mx-6 sm:my-6 lg:mx-10 lg:my-10">
+          <SkipLink />
+          <SiteHeader />
+          {/* bg-offwhite here, not on the image itself: several pages
+              (contact, products, how-it-works, and any placeholder page)
+              render text on a bare div with no section background of its
+              own, and/or are shorter than the viewport. Without this, the
+              floral background shows directly behind live body copy on
+              those pages, which is unreadable wherever the image's darker
+              regions land — confirmed by screenshot before adding this. */}
+          <main id="main-content" className="bg-offwhite flex-1">
+            {children}
+          </main>
+          <SiteFooter />
+        </div>
       </body>
     </html>
   );

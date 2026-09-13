@@ -25,8 +25,15 @@
 }
 
 @layer base {
+  /* Site-wide background image. bg-offwhite stays as the fill color, painted
+     behind the image, so nothing breaks if the file is missing or slow to
+     load. Every section/header/footer on the site is an opaque full-bleed
+     fill with no gaps between them, so in the current design this is only
+     visible in the gutter margin around the page frame added in
+     layout.tsx — see DECISIONS.md. */
   body {
-    @apply bg-offwhite font-body text-navy;
+    @apply bg-offwhite font-body text-navy bg-cover bg-fixed bg-no-repeat;
+    background-image: url("/brand/background-floral.webp");
   }
 
   h1,
