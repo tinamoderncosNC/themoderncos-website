@@ -1,4 +1,4 @@
-import { PendingCtaButton } from "@/components/home/pending-cta-button";
+import { PendingCtaButton } from "@/components/pending-cta-button";
 
 export function FinalCta() {
   return (

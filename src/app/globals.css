@@ -11,6 +11,15 @@
   --color-muted: #5c5c5c;
   --color-hairline: #d9d9d9;
 
+  /* Not part of Brand Guide v1.0 — added for the Services page's 4-color
+     ladder-progression CTAs (Increment 3e/DECISIONS.md). --color-sage is
+     lightened from the originally specified #6b8f82 to #729588 because navy
+     text on the original value only reached 4.46:1 (fails WCAG AA's 4.5:1
+     for normal-weight text); this value clears it at 4.82:1. Flag for Tina
+     to confirm whether these become permanent brand accents. */
+  --color-amber: #c98a3e;
+  --color-sage: #729588;
+
   --font-heading: var(--font-poppins);
   --font-body: var(--font-inter);
 }

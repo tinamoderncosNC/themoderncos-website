@@ -395,3 +395,72 @@ Replaces the Increment 3a `/about` placeholder (shared `MarketingPlaceholderPage
 **Conditional Test Checklist (this increment):** unchanged — still N/A across the board except the same two ⚠️ items (SSL on a real domain, separate dev/prod environments), deferred to go-live per `DEPLOYMENT.md`.
 
 **Status:** 🔒 **Locked** by Tina Biello (Approver) on 2026-09-12, after reviewing the live page in the dev server. Founder-name choice already confirmed above. The only open item is the headshot, expected to slot in later per the brief without a rebuild.
+
+## Increment 3e — Services page content & structure (real copy, built, pending Approver lock)
+
+Replaces the Increment 3a `/services` placeholder (shared `MarketingPlaceholderPage` component) with the final copy and section-by-section layout from the "Services Page Build Spec" brief (2026-09-12). Scoped to the guided/project/retainer services ladder only, per the brief's own scope note — self-serve digital tools stay on `/products`, untouched here. `/how-it-works` is untouched and still uses the shared placeholder. No schema, auth, or payments changes.
+
+**What was built:**
+
+- `src/components/services/` — one component per section (`hero.tsx`, `ladder-section.tsx`, `on-call-section.tsx`, `how-different-section.tsx`, `final-cta.tsx`), composed in `src/app/services/page.tsx` (no longer using `MarketingPlaceholderPage`). All real, final copy from the brief.
+- `src/components/pending-cta-button.tsx` — moved out of `src/components/home/` to the shared top-level components folder (alongside `marketing-placeholder-page.tsx` and `contact-form-placeholder.tsx`) since the Services final CTA now needed the same not-yet-shipped-Scorecard treatment as the homepage. All three call sites in `src/components/home/` updated to the new import path; behavior unchanged.
+- Sections alternate navy/off-white per the brief's own proposed mapping (Hero navy, Ladder off-white, On-Call off-white/same-tone, How It's Different navy, Final CTA off-white) — **confirmed with Tina before build**, same pattern as flagging the founder-name choice on the About brief.
+- **Ladder grid:** `grid-cols-1 sm:grid-cols-2 lg:grid-cols-4`, `gap-6` (24px). The brief specified custom 600px/860px breakpoints but also said to match whatever's already live if it differs, "consistency across pages matters more than the exact pixel values here" — the rest of the site uses Tailwind's default `sm`(640px)/`md`(768px)/`lg`(1024px) scale (see `offer-ladder.tsx`, `what-we-do.tsx`), so this section uses that scale instead of introducing a one-off breakpoint. Verified live: 4 cols at 1280px, 2 cols at 800px, 1 col at 390px.
+- **Card heights are not equalized.** `items-start` on the grid container overrides CSS Grid's default row-stretch, so each card (`<li>`) sizes to its own content — Card 3's longer body and Card 4's longer "Includes" list make those cards taller than Cards 1 and 2, per the brief ("that's expected, not a bug to fix"). Confirmed visually in the desktop screenshot.
+- **Card CTA destinations — assumption flagged:** the brief specifies four different CTA labels ("Book a Diagnostic Call," "Get a Sprint Quote," "Discuss Your Project," "Talk to Tina About a Retainer") but no distinct booking page, calendar link, or intake form per tier exists anywhere in the codebase or `/references`. All four link to the existing `/contact` route today, differentiated only by label text — same pattern as the About and homepage CTAs that already point there. Revisit once a real per-tier booking flow (e.g., a Diagnostic-specific Calendly link) exists.
+- CTA fill colors: navy on Cards 1-3, coral only on Card 4 (Fractional CoS), per the brief's instruction to mark the highest-commitment tier without a "most popular" badge or other framework device.
+- **On-Call Support** section: same off-white tone as the ladder above it (not a color break), set apart with a `border-hairline border-t` rule and a narrower `max-w-2xl` column instead. Heading uses `<h2>` for correct document structure but styled at `text-xl` (smaller than the ladder's `text-3xl` H2) so it doesn't visually compete with Card 4's retainer positioning, per the brief. No CTA, per the brief.
+- **How It's Different** section: `max-w-prose` (Tailwind's 65ch column) for the centered body text, matching the brief's "max ~65ch, this is a statement section, not a content-dense one."
+- **Final CTA:** primary is a `PendingCtaButton` (coral tone, "Take the Free Ops Leak Scorecard," "The Scorecard is launching soon.") since the Scorecard still hasn't shipped (confirmed against the homepage's own still-pending status) — not a working link yet, matching the brief's own conditional note to flip this once the Scorecard popup exists. Secondary CTA (`Talk to Tina` → `/contact`) renders as a plain underlined text link beneath it, not a second button of equal weight, per the brief.
+- No dollar figures anywhere in the new copy — confirmed by inspection; pricing stays internal per the AI Workflow Support Partnership one-pager referenced in the brief.
+- Page `metadata` (`title`, `description`, `og:description`) set from the real hero/subhead copy.
+
+**Verification:** `npm run typecheck`, `npm run lint`, `npm run format:check`, `npm run build` all pass clean; `/services` still prerenders static (`○`). Checked live in headless Chromium (Playwright) at desktop (1280×1000), tablet (800×1000), and mobile (390×1000): zero console/page errors at any viewport; confirmed computed `grid-template-columns` is 4 columns at desktop, 2 at tablet, 1 at mobile; mobile stacking order matches the brief's required ladder order (Diagnostic → Sprint → Implementation → Retainer); confirmed programmatically that the only em dash anywhere in the rendered page is in the pre-existing site-wide header/footer logo `aria-label` ("Modern CoS — home"), unrelated to this brief's scope and untouched by it.
+
+**Review battery:**
+
+| Item                                    | Status  | Note                                                                                                                                          |
+| --------------------------------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| Extra security pass                     | ✅ done | No secrets, no new data reads/writes, no forms.                                                                                               |
+| API input trust boundary                | N/A     | No API routes or user input — every interactive element is a static `Link` to the existing `/contact` page, or a disabled `PendingCtaButton`. |
+| Rate limiting                           | N/A     | No endpoints introduced.                                                                                                                      |
+| Fake account / spam / abuse protection  | N/A     | No forms introduced.                                                                                                                          |
+| Performance                             | ✅ done | Confirmed via build output: `/services` is still static/prerendered. Every new component is a Server Component — no client JS added.          |
+| Migrations                              | N/A     | No schema changes.                                                                                                                            |
+| Input validation / basic bot protection | N/A     | No input accepted on this page.                                                                                                               |
+
+**Accessibility spot-check (WCAG 2.2 AA):** single `h1`, sequential `h2`s per section (Ladder, On-Call, How It's Different, Final CTA), `h3` per card, no skipped levels. "Includes" lists use real `<ul>`/`<li>` markup, not visual-only bullets. Contrast for the ladder CTAs is covered in the revision note directly below (superseded the original two-color navy/coral pairing this box originally described).
+
+**Conditional Test Checklist (this increment):** unchanged — still N/A across the board except the same two ⚠️ items (SSL on a real domain, separate dev/prod environments), deferred to go-live per `DEPLOYMENT.md`.
+
+### Revision — equal-height cards and 4-color CTA progression (2026-09-12)
+
+After the first build above, Tina asked for two changes to the ladder cards, superseding two specific instructions in the original brief:
+
+1. **Equal card heights.** The brief had explicitly said not to force equal heights ("Card 3's description is naturally longer... that's expected, not a bug to fix"). Tina's revised instruction: `align-items: stretch` on the grid (Tailwind's default — the earlier build had explicitly opted out with `items-start`) plus `flex flex-col` on each card and `margin-top: auto` on the CTA wrapper, so every card matches the tallest one in its row and all four buttons land on the same bottom edge, without adding padding or trimming copy. Implemented in `ladder-section.tsx`; confirmed live via Playwright — all four cards measured exactly 618px tall at 1280px width.
+2. **4-color CTA progression**, one color per card signaling ladder position, replacing the brief's original navy-on-1-3/coral-on-4 pairing: Card 1 navy, Card 2 amber, Card 3 sage, Card 4 coral.
+
+**Contrast review of the requested colors (WCAG AA, 4.5:1 for normal-weight button text) surfaced three failures, one caught by Tina before asking, two caught in review:**
+
+| Card | Fill                    | Tina's requested text                                    | Contrast | Result                                                   |
+| ---- | ----------------------- | -------------------------------------------------------- | -------- | -------------------------------------------------------- |
+| 1    | Navy #052439            | white/off-white                                          | 15.93:1  | Pass — as requested                                      |
+| 2    | Amber #c98a3e           | white (Tina caught this herself, requested navy instead) | 2.92:1   | Fails — not used                                         |
+| 2    | Amber #c98a3e           | navy                                                     | 5.45:1   | Pass — used                                              |
+| 3    | Sage #6b8f82 (original) | white                                                    | 3.57:1   | Fails                                                    |
+| 3    | Sage #6b8f82 (original) | navy                                                     | 4.46:1   | Fails (just under 4.5:1)                                 |
+| 4    | Coral #e0705d           | white                                                    | 3.16:1   | Fails                                                    |
+| 4    | Coral #e0705d           | navy                                                     | 5.04:1   | Pass — matches every other coral CTA already on the site |
+
+Flagged both remaining failures to Tina directly rather than silently picking a fix, per the same "ask before building when underspecified" rule this file already follows elsewhere:
+
+- **Card 4:** confirmed navy text over the originally-requested white, matching the coral-button convention already used on the homepage and About page.
+- **Card 3:** Tina's own proposed fix (darken sage to `#5c7a6e`) was tried and made contrast _worse_ (3.39:1) — sage sits lighter than navy text, so darkening the fill moves it toward navy rather than away from it; lightening is what increases the gap. Confirmed with Tina and shipped a lightened sage, `#729588` (navy text: 4.82:1), close enough to the original hue that it doesn't read as a different color. `--color-sage` in `globals.css` documents both the original spec value and why it changed.
+
+**New CSS tokens:** `--color-amber: #c98a3e` and `--color-sage: #729588` added to `globals.css`'s `@theme` block, explicitly commented as **not part of Brand Guide v1.0** — flagged for Tina to confirm whether these become permanent brand accents or stay scoped to this page.
+
+**Build note:** after this revision, the Turbopack dev server initially kept serving a stale compiled CSS chunk (same content hash) with neither the new tokens nor the `bg-amber`/`bg-sage` utilities present, even after a plain restart. A full `.next` cache clear plus restart fixed it — worth knowing if a future CSS-only `@theme` change doesn't seem to take effect in dev.
+
+**Updated verification:** `npm run typecheck`, `npm run lint`, `npm run format:check`, `npm run build` all pass clean after the revision; `/services` still prerenders static (`○`). Re-checked live in headless Chromium at desktop (1280×1000), confirmed via `getBoundingClientRect()` that all four cards measure identically (618px), and visually confirmed the navy → amber → sage → coral progression renders correctly against the previously-stale-CSS state.
+
+**Status:** 🔒 **Locked** by Tina Biello (Approver) on 2026-09-12, after reviewing the equal-height/4-color revision. Two open items carry forward, not blockers: (1) the card-CTA-to-`/contact` routing assumption, which stands until per-tier booking links exist, (2) whether amber/sage graduate from page-scoped tokens to permanent Brand Guide accents.

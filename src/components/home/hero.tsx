@@ -1,4 +1,4 @@
-import { PendingCtaButton } from "@/components/home/pending-cta-button";
+import { PendingCtaButton } from "@/components/pending-cta-button";
 
 // Brand rule for this section (brief, "Global notes"): navy background, coral
 // reserved for the eyebrow label and the primary CTA only. The secondary CTA

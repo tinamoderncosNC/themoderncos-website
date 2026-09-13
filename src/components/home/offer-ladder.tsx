@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { PendingCtaButton } from "@/components/home/pending-cta-button";
+import { PendingCtaButton } from "@/components/pending-cta-button";
 
 // Simplified 3-rung view of the internal 7-stage ladder (Scorecard -> Sprint
 // -> Retainer), for a first-time visitor who needs one next step. Self-serve
