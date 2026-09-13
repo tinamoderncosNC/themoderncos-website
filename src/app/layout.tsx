@@ -77,7 +77,14 @@ export default function RootLayout({
         {/* Gutter frame: no background of its own, so body's background
             image (globals.css) shows through as a border around the page.
             Purely additive spacing — every section/header/footer inside is
-            untouched. Drops to 0 margin on mobile per the brief. */}
+            untouched. Drops to 0 margin on mobile per the brief. Breakpoint
+            was temporarily moved to 380px for the header's logo-overlap
+            treatment (2026-09-14); reverted back to sm (640px) here once
+            that overlap was replaced with the horizontal logo lockup sitting
+            in normal flow — nothing needs the 380px trigger anymore, and
+            grepping the header/mobile-nav components after removing the
+            overlap logic confirmed no other `min-[380px]` usage remained
+            anywhere in src/. */}
         <div className="flex flex-1 flex-col sm:mx-6 sm:my-6 lg:mx-10 lg:my-10">
           <SkipLink />
           <SiteHeader />

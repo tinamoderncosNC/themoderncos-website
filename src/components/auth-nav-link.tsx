@@ -31,7 +31,7 @@ export function AuthNavLink() {
   return (
     <Link
       href={signedIn ? "/account" : "/login"}
-      className="text-navy focus-visible:outline-coral font-medium underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2"
+      className="border-navy text-navy focus-visible:outline-coral hover:bg-navy hover:text-offwhite inline-block rounded border-2 px-4 py-1.5 font-medium whitespace-nowrap focus-visible:outline-2 focus-visible:outline-offset-2"
     >
       {signedIn ? "Account" : "Log In"}
     </Link>
