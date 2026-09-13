@@ -731,3 +731,39 @@ A follow-up "Services Page Content & Structure" brief (2026-09-16) arrived with 
 **Conditional Test Checklist (this increment):** unchanged — still N/A across the board except the same two ⚠️ items (SSL on a real domain, separate dev/prod environments), deferred to go-live per `DEPLOYMENT.md`.
 
 **Status:** Built, pending Tina's review and lock, alongside the other still-open Services/header increments above.
+
+## Increment 3l — How It Works page content & structure (real copy, built, pending Approver lock)
+
+Replaces the Increment 3a `/how-it-works` placeholder (shared `MarketingPlaceholderPage` component) with the final process copy from the "How It Works Page Content & Structure" brief (2026-09-16). This is the last of the five main marketing pages to move off that placeholder — `/`, `/about`, `/services`, and `/products` were already real.
+
+**Scope check before building:** the brief's own nav-placement note ("this page sits between Services and Contact") was already satisfied by the nav order set in Increment 3i (`Services, How It Works, Products, About, Contact`) — no nav change needed, confirmed by reading `src/lib/nav-links.ts` before touching anything.
+
+**What was built:**
+
+- `src/components/how-it-works/` — one component per section (`hero.tsx`, `process-section.tsx`, `guardrails-section.tsx`, `timelines-section.tsx`, `final-cta.tsx`), composed in `src/app/how-it-works/page.tsx` (no longer using `MarketingPlaceholderPage`).
+- Sections alternate navy/off-white and end on navy (Hero navy, Process off-white, Guardrails navy, Timelines off-white, Final CTA navy) — same clean-alternation shape as About's section sequence, chosen over Services'/Products' off-white-final-CTA pattern since this page's final CTA reuses the Home hero/final-cta treatment (coral `PendingCtaButton` + plain `text-offwhite` secondary link) rather than their off-white one.
+- **The four process steps render as a vertical sequence, not a grid** — the brief was explicit these shouldn't read as "cards competing for attention" and that step 3 (the longest) shouldn't be squeezed to match the others. A side-by-side grid would force exactly that visual comparison regardless of `align-items`, so this is a single-column `<ol>` (order is meaningful) with a large coral numeral beside each step's content, spaced vertically. Confirmed live: step 3's paragraph is visibly taller than step 1's, with no equal-height forcing anywhere.
+- The brief's own step headers used an em dash as shorthand ("Step 1 — Find the leak") to combine a number and a name into one line — not reproduced literally. Each step's number (`01`-`04`) and name render as two separate elements (a numeral span and an `<h3>`), which avoids needing an em dash in the rendered page at all rather than requiring a find-and-replace fix.
+- Section 4 (Timelines)'s brief included a pricing-math justification paragraph after its stated body copy (weekly capacity, per-workflow hours, the Implementation Project's two-workflow cap) that reads as a note to the builder rather than visitor-facing content — the body text ends where the brief's own "Body:" label ends. Recorded the justification in a code comment above `TimelinesSection` instead of shipping it as page copy, consistent with the brief's own scope note against restating Services' pricing mechanics here.
+- No dollar figures and no em dashes anywhere in the visible page — checked via `page.evaluate(() => document.body.innerText)` rather than `textContent` or raw HTML, since both of the latter pick up React's RSC script-payload markup (which contains `$`-prefixed serialization IDs like `$93` and literal em dashes inside unrelated JSON) and produce false positives that look like real violations. `innerText` returns only what a visitor actually sees; confirmed zero em dashes and zero dollar-figure matches against that.
+- Page `metadata` (`title`, `description`, `og:description`) set from the real hero/subhead copy, replacing the old placeholder description that referenced "how Modern CoS's prompt products work" (a leftover from before the Products/Services split existed).
+
+**Verification:** `npm run typecheck`, `npm run lint`, `npm run format:check`, `npm run build` all pass clean; `/how-it-works` prerenders static (`○`). Checked live in headless Chromium (Playwright) at desktop (1280×1000) and mobile (375×800): zero console/page errors at either viewport; confirmed via `innerText` that the rendered page contains no em dash and no dollar-figure pattern; visually confirmed the vertical step sequence, the navy/off-white alternation, and that step 3 is naturally taller than step 1 with no forced equal height.
+
+**Review battery:**
+
+| Item                                    | Status  | Note                                                                                                                                                       |
+| --------------------------------------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Extra security pass                     | ✅ done | No secrets, no new data reads/writes, no forms.                                                                                                            |
+| API input trust boundary                | N/A     | No API routes, forms, or user input — the only interactive elements are a disabled `PendingCtaButton` and a static `Link` to the existing `/contact` page. |
+| Rate limiting                           | N/A     | No endpoints introduced.                                                                                                                                   |
+| Fake account / spam / abuse protection  | N/A     | No forms introduced.                                                                                                                                       |
+| Performance                             | ✅ done | Confirmed via build output: `/how-it-works` is static/prerendered. Every new component is a Server Component — no client JS added.                         |
+| Migrations                              | N/A     | No schema changes.                                                                                                                                         |
+| Input validation / basic bot protection | N/A     | No input accepted on this page.                                                                                                                            |
+
+**Accessibility spot-check (WCAG 2.2 AA):** single `h1`, sequential `h2`s per section, `h3` per step, no skipped levels. The four steps use a real `<ol>` since their order is meaningful, not a `<ul>`. Contrast: navy text on off-white, off-white text on navy, and the coral `PendingCtaButton` on navy all reuse ratios already confirmed elsewhere on the site (Home's identical final-cta pattern).
+
+**Conditional Test Checklist (this increment):** unchanged — still N/A across the board except the same two ⚠️ items (SSL on a real domain, separate dev/prod environments), deferred to go-live per `DEPLOYMENT.md`.
+
+**Status:** Built, pending Tina's review and lock, alongside the other still-open increments above.
