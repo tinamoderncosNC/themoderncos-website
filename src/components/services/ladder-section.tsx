@@ -14,6 +14,15 @@ import Link from "next/link";
 // with white text and sage with either text color all measured under 4.5:1
 // (amber caught by Tina, sage/coral caught in review) — see DECISIONS.md for
 // the exact ratios and the --color-sage lightening this required.
+//
+// Card 3 ("Implementation Project") is capped at two workflows, not
+// "multiple" or "several" — a pricing fix, not a copy preference. At the
+// confirmed Sprint rate (18-25hr/workflow, $2,200-$2,800/Sprint), 3-5
+// workflows inside the existing $3,000-$6,500 band worked out to as low as
+// $24/hr at the high-hours end, well under the Sprint's own $88-$155/hr. Two
+// workflows (36-50hr) keeps this tier inside a fair hourly range without
+// moving the price. A prospect wanting 3+ workflows gets a custom quote via
+// the same "Discuss Your Project" conversation, not a listed tier.
 const tiers = [
   {
     name: "Guided Diagnostic",
@@ -41,13 +50,14 @@ const tiers = [
   {
     name: "Implementation Project",
     description:
-      "A larger, multi-workflow build for operations that need more than one fix, delivered as a single coordinated project.",
+      "A coordinated build across two connected workflows, for operations where the problem isn't one process, it's how two of them interact.",
     includes: [
-      "Everything in a Sprint, scaled across multiple connected workflows",
+      "Everything in a Sprint, scaled across two connected workflows",
       "A project plan",
       "Milestone check-ins",
     ],
-    bestFor: "The problem isn't one workflow, it's how several of them interact.",
+    bestFor:
+      "You've got two workflows feeding into each other and fixing one without the other won't hold.",
     cta: "Discuss Your Project",
     tone: "sage" as const,
   },
