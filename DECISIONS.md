@@ -284,6 +284,7 @@ Confirmed by Tina on 2026-07-25: **magic-link email authentication** (Supabase `
 **Bug caught during build (fixed before presenting):** the header's auth link was first implemented by making `SiteHeader` itself (rendered on every page via the root layout) call the cookie-aware server client. That would have forced **every page on the site** — including the static/ISR marketing and catalog pages just fixed in Increment 3b — to render dynamically on every request, since reading cookies anywhere in a shared layout poisons the whole tree. Caught before running the build. Fixed by extracting a small Client Component (`src/components/auth-nav-link.tsx`) that checks auth state client-side via `supabase.auth.onAuthStateChange`/`getUser()` after hydration — `SiteHeader` itself touches no cookies again. Rebuilt and confirmed `/`, `/products`, `/products/[slug]`, and the other marketing pages are still static/SSG; only `/login`, `/account`, and `/auth/callback` are dynamic, which is correct since those are inherently session-dependent.
 
 **Live verification (2026-07-25):**
+
 - Automated: `GET /account` while logged out → `307` to `/login` (confirmed via `curl`, no session bypass). `GET /login` while logged out → `200`, renders the form. `GET /auth/callback` with no `code` or a bogus `code` → redirects to `/login` cleanly, no crash, `X-Robots-Tag: noindex` present. Checked in a headless browser: header shows "Log In" correctly when signed out, zero console errors on `/` and `/login`.
 - **Manual, by Tina (Approver) — the one step that structurally requires a real inbox, which the assistant can't access:** submitted her real email at `/login`, received the magic-link email (sent by Supabase's own default sender — see branding note below), clicked it, landed on `/account` showing her email, used "Sign out," landed back on `/`, and confirmed `/account` again required signing in. Full loop confirmed working end-to-end on a live Supabase project.
 
@@ -291,29 +292,106 @@ Confirmed by Tina on 2026-07-25: **magic-link email authentication** (Supabase `
 
 **Review battery:**
 
-| Item | Status | Note |
-|---|---|---|
-| Extra security pass | ✅ done | `getUser()` used (not `getSession()`) everywhere an auth decision is made — the only server-verified check, per Supabase's own guidance. No enumeration leak on login error. `/auth/callback` has no open-redirect param. Sign-out uses a Server Action (built-in CSRF protection) rather than a bare client-side call. |
-| API input trust boundary | ✅ done | The only untrusted input is the email in the login form (passed straight to `signInWithOtp`, which Supabase validates) and the `code` query param in the callback (passed straight to `exchangeCodeForSession`, which validates or rejects it — never parsed or trusted directly by application code). |
-| Rate limiting | ⚠️ still needed | No app-level rate limiting yet (Increment 8, as planned). Interim protection: Supabase's own built-in auth rate limits (email OTP requests capped per hour at the project level) already apply today. |
-| Fake account / spam / abuse protection | ⚠️ still needed | Same as above — relying on Supabase's built-in throttling until Increment 8's dedicated pass. |
-| Performance | ✅ done | Confirmed via build output: adding auth did not regress the static/ISR pages from Increment 3b — only the three inherently session-dependent routes (`/login`, `/account`, `/auth/callback`) are dynamic. |
-| Migrations | N/A | No schema changes — Increment 2's `profiles` table and its `handle_new_user()` trigger (built ahead of need for exactly this moment) already handle new-user rows automatically; confirmed working via the live signup during Tina's test. |
-| Input validation / basic bot protection | ⚠️ still needed | Email field uses the browser's native `type="email"` validation only; no CAPTCHA/bot-protection layer yet — deferred to Increment 8 alongside rate limiting, consistent with the rest of the plan. |
+| Item                                    | Status          | Note                                                                                                                                                                                                                                                                                                                    |
+| --------------------------------------- | --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Extra security pass                     | ✅ done         | `getUser()` used (not `getSession()`) everywhere an auth decision is made — the only server-verified check, per Supabase's own guidance. No enumeration leak on login error. `/auth/callback` has no open-redirect param. Sign-out uses a Server Action (built-in CSRF protection) rather than a bare client-side call. |
+| API input trust boundary                | ✅ done         | The only untrusted input is the email in the login form (passed straight to `signInWithOtp`, which Supabase validates) and the `code` query param in the callback (passed straight to `exchangeCodeForSession`, which validates or rejects it — never parsed or trusted directly by application code).                  |
+| Rate limiting                           | ⚠️ still needed | No app-level rate limiting yet (Increment 8, as planned). Interim protection: Supabase's own built-in auth rate limits (email OTP requests capped per hour at the project level) already apply today.                                                                                                                   |
+| Fake account / spam / abuse protection  | ⚠️ still needed | Same as above — relying on Supabase's built-in throttling until Increment 8's dedicated pass.                                                                                                                                                                                                                           |
+| Performance                             | ✅ done         | Confirmed via build output: adding auth did not regress the static/ISR pages from Increment 3b — only the three inherently session-dependent routes (`/login`, `/account`, `/auth/callback`) are dynamic.                                                                                                               |
+| Migrations                              | N/A             | No schema changes — Increment 2's `profiles` table and its `handle_new_user()` trigger (built ahead of need for exactly this moment) already handle new-user rows automatically; confirmed working via the live signup during Tina's test.                                                                              |
+| Input validation / basic bot protection | ⚠️ still needed | Email field uses the browser's native `type="email"` validation only; no CAPTCHA/bot-protection layer yet — deferred to Increment 8 alongside rate limiting, consistent with the rest of the plan.                                                                                                                      |
 
 **Conditional Test Checklist (this increment):**
 
-| Item | Status | Note |
-|---|---|---|
-| Login and password reset | ✅ done (login) / N/A (password reset) | Magic-link login verified live end-to-end. No password reset flow applicable — there are no passwords. |
-| Real credit card payments | N/A | Increment 5. |
-| SSL on a real domain | ⚠️ still needed | Unchanged — deferred to go-live. |
-| Separate development and production environments | ⚠️ still needed | Unchanged — deferred to go-live. |
-| API keys not exposed anywhere | ✅ done | Only the anon key (meant to be public) is used client-side; no service-role key exists in the codebase yet. |
-| Production database backups verifiable | N/A | Backup verification is a Stage C / pre-launch item. |
-| Email verification | ✅ done | Inherently satisfied by the magic-link mechanism itself, confirmed via Tina's live test. |
-| Rate limiting | ⚠️ still needed | See battery above. |
-| Input validation | ⚠️ still needed | See battery above. |
-| Basic bot protection | ⚠️ still needed | See battery above. |
+| Item                                             | Status                                 | Note                                                                                                        |
+| ------------------------------------------------ | -------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| Login and password reset                         | ✅ done (login) / N/A (password reset) | Magic-link login verified live end-to-end. No password reset flow applicable — there are no passwords.      |
+| Real credit card payments                        | N/A                                    | Increment 5.                                                                                                |
+| SSL on a real domain                             | ⚠️ still needed                        | Unchanged — deferred to go-live.                                                                            |
+| Separate development and production environments | ⚠️ still needed                        | Unchanged — deferred to go-live.                                                                            |
+| API keys not exposed anywhere                    | ✅ done                                | Only the anon key (meant to be public) is used client-side; no service-role key exists in the codebase yet. |
+| Production database backups verifiable           | N/A                                    | Backup verification is a Stage C / pre-launch item.                                                         |
+| Email verification                               | ✅ done                                | Inherently satisfied by the magic-link mechanism itself, confirmed via Tina's live test.                    |
+| Rate limiting                                    | ⚠️ still needed                        | See battery above.                                                                                          |
+| Input validation                                 | ⚠️ still needed                        | See battery above.                                                                                          |
+| Basic bot protection                             | ⚠️ still needed                        | See battery above.                                                                                          |
 
 **Status:** 🔒 **Locked** by Tina Biello (Approver) on 2026-07-25, per her live end-to-end test. Branded-email follow-up tracked as a required pre-launch step, not a blocker.
+
+## Homepage offer-ladder & Ops Leak Scorecard — scope decision
+
+The "Home Page Content & Structure" brief (2026-09-09) referenced "your existing decision" that the Ops Leak Scorecard fires as a scroll-triggered popup, site-wide. No such decision exists anywhere in this file or the codebase prior to this entry — flagged and confirmed with Tina before building, per the intake rule above ("ask first if anything is ambiguous or missing").
+
+**Decision (Tina, 2026-09-09):** This increment ships homepage copy and structure only. The Scorecard popup, the Scorecard flow itself, and the CoS Sprint details page are real future scope, not yet numbered or designed in the Increment breakdown above — they need their own Stage A pass (data model for scoring/lead capture, popup trigger mechanics, rate limiting/bot protection) rather than being bolted onto a content increment. Where this brief's copy names a CTA with no built destination (`Get Your Score`, `See What's Included`), the button renders as a real, full-strength, disabled control with an honest "Launching soon." caption — same non-negotiable ("don't fake a working feature") already applied to the Increment 3b product-page CTA, just in plain customer-facing language since this page's copy is final, not a labeled placeholder. `Talk to Tina` links to the real, already-built `/contact` page.
+
+## Increment 3c — Homepage content & structure (real copy, built, pending Approver lock)
+
+Replaces the Increment 3a homepage placeholder with the final copy and structure from the brief. No schema, auth, or payments changes.
+
+**What was built:**
+
+- `src/components/home/` — one component per section (`hero.tsx`, `problem-section.tsx`, `what-we-do.tsx`, `offer-ladder.tsx`, `proof-section.tsx`, `final-cta.tsx`) plus a shared `pending-cta-button.tsx` for the two CTAs with no built destination yet, composed in `src/app/page.tsx`. All real, final copy from the brief — no invented claims, testimonials, or stats.
+- Section backgrounds alternate navy/off-white (Hero navy, Problem off-white, What We Do navy, How to Start off-white, Proof off-white, Final CTA navy) so the closing CTA bookends the hero, per the brief's "coral used only on eyebrow + CTA button" rule for the Hero and the general "coral stays sparse" rule elsewhere — coral appears only as the two eyebrow-style labels (Hero eyebrow, and the Free/Project/Retainer tier tags) and the two Scorecard CTA buttons; every other CTA and heading is navy/off-white.
+- `PendingCtaButton` (`Get Your Score`, `See What's Included`, and both `Take the Free Ops Leak Scorecard` instances) renders as a normal full-strength button (not grayed out) with `disabled` + `aria-describedby` pointing at a real "Launching soon." caption, so it reads as a finished page with an honest not-yet-available state, not a dev placeholder or a fake working link.
+- `Talk to Tina` is a real `<Link href="/contact">`, styled as a button — verified it actually navigates to the live `/contact` page.
+- The offer-ladder cards use `<h3>` for `Ops Leak Scorecard` / `CoS Sprint™` / `Fractional Chief of Staff` (not `<p>`) so screen-reader users can navigate the three offers by heading, consistent with the rest of the site's heading structure.
+- Secondary hero CTA ("See how it works ↓") is a same-page anchor to the Problem section (`#the-problem`) — the brief didn't specify a target; a same-page scroll cue was the most literal reading of the "↓" and doesn't assert a routing decision Tina didn't make. Flagged here in case she meant the `/how-it-works` page instead — trivial to change.
+- Homepage `metadata` (`title`, `description`, `og:description`) updated to reflect the real hero/subhead copy instead of the Increment 0 placeholder description; root layout defaults untouched (still used as fallback by other pages).
+
+**Verification:** `npm run typecheck`, `npm run lint`, `npm run format:check`, `npm run build` all pass clean; `/` still prerenders static (`○`), unchanged from Increment 3a/3b. Checked live in headless Chromium (Playwright, ad hoc — not a committed dependency) at desktop (1280×900) and mobile (390×844) viewports: zero console/page errors either viewport; the secondary CTA anchor scrolls to the Problem section; all 4 `PendingCtaButton`s render as genuinely non-interactive `disabled` buttons; `Talk to Tina` resolves to `/contact`. Screenshots reviewed, not committed (session scratchpad only, per the Increment 0 precedent).
+
+**Review battery:**
+
+| Item                                    | Status  | Note                                                                                                                                                                                                                                    |
+| --------------------------------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Extra security pass                     | ✅ done | No secrets, no new data reads/writes, no forms. The two `dangerouslySetInnerHTML` JSON-LD blocks in the root layout are untouched by this increment.                                                                                    |
+| API input trust boundary                | N/A     | No API routes, forms, or user input on this page — every CTA is either a disabled placeholder or a static `Link` to an existing page.                                                                                                   |
+| Rate limiting                           | N/A     | No endpoints introduced.                                                                                                                                                                                                                |
+| Fake account / spam / abuse protection  | N/A     | No forms introduced.                                                                                                                                                                                                                    |
+| Performance                             | ✅ done | Confirmed via build output: `/` is still static/prerendered, not regressed to dynamic by the new sections. No new client components/JS beyond what already existed (`AuthNavLink`); every new homepage component is a Server Component. |
+| Migrations                              | N/A     | No schema changes.                                                                                                                                                                                                                      |
+| Input validation / basic bot protection | N/A     | No input accepted on this page.                                                                                                                                                                                                         |
+
+**Accessibility spot-check (WCAG 2.2 AA):** single `h1` (Hero), sequential `h2`s per section, `h3`s for the three offer cards — no skipped levels. Contrast checked by calculation (relative-luminance formula, same method as the Increment 3a fix): navy text on the coral CTA fill measures ~5.0:1 (passes 4.5:1); off-white text on navy backgrounds is well over 7:1. Coral is never used as the only signal — every coral element also carries its own text label. Disabled buttons are genuinely non-interactive (skipped in tab order by the browser, not a fake `aria-disabled`-only state) and carry `aria-describedby` linking to their caption.
+
+**Conditional Test Checklist (this increment):** unchanged — still N/A across the board except the same two ⚠️ items (SSL on a real domain, separate dev/prod environments), deferred to go-live per `DEPLOYMENT.md`.
+
+**Status:** Built, pending Tina's review and lock. Flagged for her attention: (1) the "See how it works ↓" anchor target (Problem section vs. `/how-it-works` page — see note above), (2) the Scorecard-popup scope decision recorded above, since it changes what "the existing decision" in the brief actually refers to going forward.
+
+## Public-facing founder name — confirmed
+
+The "About Page Content & Structure" brief (2026-09-09) flagged its own open item: business plan documents use "Tina Biello" everywhere except one founder-bio paragraph that uses "Tina Biello-Frumkin." **Confirmed by Tina, 2026-09-09: "Tina Biello"** is the name that ships on the live site, matching the brand guide and every other public document. Recorded here since this is exactly the kind of pre-indexing decision that's cheap now and expensive after Google has crawled it.
+
+## Increment 3d — About page content & structure (real copy, built, pending Approver lock)
+
+Replaces the Increment 3a `/about` placeholder (shared `MarketingPlaceholderPage` component) with the final copy and structure from the brief. `/how-it-works` and `/services` are untouched and still use the shared placeholder. No schema, auth, or payments changes.
+
+**What was built:**
+
+- `src/components/about/` — one component per section (`hero.tsx`, `story-section.tsx`, `background-section.tsx`, `how-we-work-section.tsx`, `final-cta.tsx`), composed in `src/app/about/page.tsx` (no longer using `MarketingPlaceholderPage`). All real, final copy from the brief.
+- Sections alternate navy/off-white (Hero navy, Story off-white, Background navy, How We Work off-white, Final CTA navy), same convention as the homepage (Increment 3c).
+- No headshot exists yet (checked `/public` and `/brand` — only the logo file is present). Per the brief, shipped text-only rather than holding up the build; the Hero section's layout is a simple centered block a future `<Image>` can drop into without restructuring.
+- **Em-dash conflict caught and resolved:** the brief's own credentials strip used em dashes as a degree/institution separator ("MBA, ... — NC State University"), which conflicts with this build's global "no em dashes" rule (repeated explicitly in this brief). Substituted a middle dot (`·`) instead of silently keeping the dash or silently changing it without a record — e.g. "MBA, Entrepreneurship & Technology Commercialization · NC State University." Verified live: the rendered page contains zero em-dash characters.
+- The one real CTA (`Talk to Tina` → `/contact`) uses the coral-fill button style (navy text on coral, same ~5:1 contrast pairing as the homepage), since it's a genuinely functioning link, not a pending-feature placeholder like the homepage's Scorecard CTAs. No second CTA was added, per the brief.
+- Page `metadata` (`title`, `description`, `og:description`) set from the real hero copy.
+
+**Verification:** `npm run typecheck`, `npm run lint`, `npm run format:check`, `npm run build` all pass clean; `/about` still prerenders static (`○`). Checked live in headless Chromium (Playwright) at desktop (1280×900) and mobile (390×844): zero console/page errors either viewport; single `h1` ("Tina Biello, Founder"); `Talk to Tina` resolves to `/contact`; confirmed programmatically that the rendered page text contains no instance of "Biello-Frumkin" and no em-dash character.
+
+**Review battery:**
+
+| Item                                    | Status  | Note                                                                                                                              |
+| --------------------------------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| Extra security pass                     | ✅ done | No secrets, no new data reads/writes, no forms.                                                                                   |
+| API input trust boundary                | N/A     | No API routes, forms, or user input — the only interactive element is a static `Link` to the existing `/contact` page.            |
+| Rate limiting                           | N/A     | No endpoints introduced.                                                                                                          |
+| Fake account / spam / abuse protection  | N/A     | No forms introduced.                                                                                                              |
+| Performance                             | ✅ done | Confirmed via build output: `/about` is still static/prerendered. Every new component is a Server Component — no client JS added. |
+| Migrations                              | N/A     | No schema changes.                                                                                                                |
+| Input validation / basic bot protection | N/A     | No input accepted on this page.                                                                                                   |
+
+**Accessibility spot-check (WCAG 2.2 AA):** single `h1`, sequential `h2`s per section, no skipped levels. Contrast: navy text on the coral CTA fill (~5.0:1, same calculation as Increment 3c) and off-white text on navy backgrounds (well over 7:1) both pass. Credentials strip is plain, tightly-spaced text (not color- or icon-only), per the brief.
+
+**Conditional Test Checklist (this increment):** unchanged — still N/A across the board except the same two ⚠️ items (SSL on a real domain, separate dev/prod environments), deferred to go-live per `DEPLOYMENT.md`.
+
+**Status:** 🔒 **Locked** by Tina Biello (Approver) on 2026-09-12, after reviewing the live page in the dev server. Founder-name choice already confirmed above. The only open item is the headshot, expected to slot in later per the brief without a rebuild.

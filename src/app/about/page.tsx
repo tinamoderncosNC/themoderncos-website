@@ -1,12 +1,28 @@
 import type { Metadata } from "next";
-import { MarketingPlaceholderPage } from "@/components/marketing-placeholder-page";
+import { AboutHero } from "@/components/about/hero";
+import { StorySection } from "@/components/about/story-section";
+import { BackgroundSection } from "@/components/about/background-section";
+import { HowWeWorkSection } from "@/components/about/how-we-work-section";
+import { AboutFinalCta } from "@/components/about/final-cta";
+
+const description =
+  "15+ years running go-to-market operations inside enterprise technology companies. Now she builds the same systems for founders who don't have an enterprise team to build them.";
 
 export const metadata: Metadata = {
-  title: "About",
-  description: "About Modern CoS, LLC.",
+  title: "Tina Biello, Founder",
+  description,
   alternates: { canonical: "/about" },
+  openGraph: { description },
 };
 
 export default function AboutPage() {
-  return <MarketingPlaceholderPage eyebrow="About" title="About Modern CoS" />;
+  return (
+    <>
+      <AboutHero />
+      <StorySection />
+      <BackgroundSection />
+      <HowWeWorkSection />
+      <AboutFinalCta />
+    </>
+  );
 }
