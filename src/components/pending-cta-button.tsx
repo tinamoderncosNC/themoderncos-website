@@ -2,7 +2,12 @@ type PendingCtaButtonProps = {
   label: string;
   note: string;
   noteId: string;
-  tone: "coral" | "navy";
+  tone: "coral" | "navy" | "amber" | "sage";
+  /** Override the default note text color. Needed when a tone's default
+   * assumption (coral => on a navy section, else => on a light section) does
+   * not hold — e.g. Products page cards, where every tone sits on a white
+   * card regardless of fill color. */
+  noteClassName?: string;
 };
 
 // The Ops Leak Scorecard and CoS Sprint pages don't exist yet (see
@@ -13,9 +18,26 @@ type PendingCtaButtonProps = {
 // customer-facing language since this page's copy is final, not a WIP note.
 // Moved out of components/home in Increment 3e (Services page) once a second
 // page needed the same pattern for the same not-yet-shipped Scorecard.
-export function PendingCtaButton({ label, note, noteId, tone }: PendingCtaButtonProps) {
-  const buttonClasses = tone === "coral" ? "bg-coral text-navy" : "bg-navy text-offwhite";
-  const noteClasses = tone === "coral" ? "text-offwhite/80" : "text-muted";
+// Extended with amber/sage tones and a noteClassName override in Increment
+// 3g (Products page) once real checkout-pending CTAs needed the same
+// 4-color system already used for Services' ladder CTAs.
+const buttonToneClasses: Record<PendingCtaButtonProps["tone"], string> = {
+  navy: "bg-navy text-offwhite",
+  coral: "bg-coral text-navy",
+  amber: "bg-amber text-navy",
+  sage: "bg-sage text-navy",
+};
+
+export function PendingCtaButton({
+  label,
+  note,
+  noteId,
+  tone,
+  noteClassName,
+}: PendingCtaButtonProps) {
+  const buttonClasses = buttonToneClasses[tone];
+  const defaultNoteClasses = tone === "coral" ? "text-offwhite/80" : "text-muted";
+  const noteClasses = noteClassName ?? defaultNoteClasses;
 
   return (
     <div>

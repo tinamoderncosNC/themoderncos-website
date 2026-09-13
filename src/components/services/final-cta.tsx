@@ -22,6 +22,7 @@ export function ServicesFinalCta() {
             note="The Scorecard is launching soon."
             noteId="services-final-cta-scorecard-note"
             tone="coral"
+            noteClassName="text-muted"
           />
           <Link
             href="/contact"

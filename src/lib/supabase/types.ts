@@ -62,6 +62,30 @@ export type Database = {
         };
         Relationships: [];
       };
+      waitlist_signups: {
+        Row: {
+          id: string;
+          email: string;
+          tier_name: string;
+          tier_price: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          email: string;
+          tier_name: string;
+          tier_price: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          email?: string;
+          tier_name?: string;
+          tier_price?: string;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;
